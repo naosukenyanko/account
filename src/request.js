@@ -16,7 +16,7 @@ class Request{
 			console.log("send", url);
 
 			superagent
-				.post(this.url)
+				.post(url)
 				.send(body)
 				.set('accept', 'json')
 				.end( (err, res)=>{
@@ -27,6 +27,6 @@ class Request{
 	}
 }
 
-const api = new Request(host + "/api");
+const api = new Request("/api");
 
 export {api, Request};

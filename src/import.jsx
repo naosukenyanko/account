@@ -50,7 +50,9 @@ export default class extends React.Component {
 		if(!table) {
 			this.setState({data: []});
 		}
-		api.request("getData", {table: table});
+		const res = await api.request("getData", {table: table});
+		console.log("result", res.body);
+		this.setState({data: res.body.data});
 	}
 
 	componentDidMount(){

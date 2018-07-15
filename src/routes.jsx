@@ -25,6 +25,7 @@ export default class extends React.Component {
 						<Route path='/balance_sheet' component={BalanceSheet}/>
 						<Route path='/input' component={Input}/>
 						<Route path='/import/:table' component={MasterImport}/>
+						<Route path='/import' component={MasterImport}/>
 					</Switch>
 				</div>
 			</Router>

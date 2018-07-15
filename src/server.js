@@ -5,6 +5,7 @@ const url = require("url");
 const path = require("path");
 const fs = require("fs");
 const mime = require("mime-types");
+const api = require('./api');
 
 
 http.createServer(function(request, response) {
@@ -19,7 +20,7 @@ http.createServer(function(request, response) {
                 "Pragma": "no-cache",
                 "Cache-Control" : "no-cache"       
             }
-			console.log(header);
+			//console.log(header);
 
             response.writeHead(200, header);
             response.write(file, "binary");
@@ -41,7 +42,12 @@ http.createServer(function(request, response) {
 
 
     var uri = url.parse(request.url).pathname;
-	
+
+	if( uri.match(/\/api/) ){
+		console.log("api", uri);
+		return api(request, response);
+	}
+
     var filename = path.join(__dirname, "../htdocs", uri);
 	if( uri.match(/images\/app\//)){
 		filename = path.join(__dirname, "mock/icon", 
