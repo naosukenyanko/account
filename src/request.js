@@ -14,10 +14,15 @@ class Request{
 			const body = Object.assign({}, args);
 			
 			console.log("send", url);
+			
+			const formData = new FormData();
+			for(let name in body){
+				formData.append(name, body[name]);
+			}
 
 			superagent
 				.post(url)
-				.send(body)
+				.send(formData)
 				.set('accept', 'json')
 				.end( (err, res)=>{
 					if(err) return reject(err);

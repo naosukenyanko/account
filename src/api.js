@@ -2,24 +2,44 @@ const mime = require("mime-types");
 const url = require("url");
 const path = require("path");
 const mongodb = require('mongodb');
+const streamToMongoDB = require('stream-to-mongo-db').streamToMongoDB;
+const iconv = require('iconv-lite');
+const parse = require('csv-parse');
+const fs = require('fs');
+const parseFormdata = require('parse-formdata');
 
 const API = {}
 
-async function getTableData(table){
-	const MongoClient = mongodb.MongoClient;
+const TABLE_FILTER = {
+	"account": "account",
+};
 
+async function getTableData(table, columns){
+	const MongoClient = mongodb.MongoClient;
 	const client = await mongodb.connect(
 		'mongodb://localhost:27017', { useNewUrlParser: true });
 	const db = client.db("account");
 	const collection = db.collection(table);
-	const data = await collection.find().toArray();
+	const data = await collection.find({}, columns).toArray();
+	client.close();
+	return data;
+}
+
+async function deleteData(table){
+	const MongoClient = mongodb.MongoClient;
+	const client = await mongodb.connect(
+		'mongodb://localhost:27017', { useNewUrlParser: true });
+	const db = client.db("account");
+	const collection = db.collection(table);
+	const data = await collection.remove({});
 	client.close();
 	return data;
 }
 
 API.getData = async function(body = {}){
-	const { table } = body;
-	data = await getTableData(table);
+	let { table } = body;
+	table = TABLE_FILTER[ table ];
+	data = await getTableData(table, {_id: 0, code: 1, name: 2});
 
 	/*
 	const data = [
@@ -31,21 +51,77 @@ API.getData = async function(body = {}){
 	return {data: data};
 }
 
-function getBody(req){
-	return new Promise( (resolve, reject)=>{
-		let body = '';
-		let err;
-		req.on('data', function (dat) {
-			body += dat;
+API.import = async function(body = {}){
+	let { table, file } = body;
+	table = TABLE_FILTER[ table ];
+
+	if(!table) return new Error("need table") ;
+	if(!file) return new Error("need file") ;
+	
+	console.log("import from", file.name);
+
+	await deleteData(table);
+	
+	const outputDBConfig = { 
+		dbURL : 'mongodb://localhost:27017/account',
+		collection : table };
+	
+	const ws = await streamToMongoDB(outputDBConfig);
+
+	
+	const res = await new Promise( (resolve, reject)=>{
+		const parser = parse({
+			skip_empty_lines:true,
+			columns: true,
 		});
-		req.on('end',function(){
+		
+		const rs = file.stream;
+		rs.pipe(iconv.decodeStream('SJIS'))
+			.pipe(iconv.encodeStream('UTF-8'))
+			.pipe(parser)
+			.pipe(ws);
+		
+		let line = 0;
+		parser.on('readable', ()=>{
+			line++;
+		});
+		
+		parser.on('end', ()=>{
+			console.log("import close");
+			
+		});
+		
+		ws.on("close", ()=>{
+			console.log("write end");
+			resolve( {
+				"result": "success", 
+				"import": line,
+			});
+		});
+		
+	});
+	
+	
+	return res;
+}
+
+async function getBody(req){
+	const data = await new Promise( (resolve, reject)=>{
+		parseFormdata(req, function (err, data) {
 			if(err) return reject(err);
-			resolve( JSON.parse(body) );
-		});
-		req.on('error', function(data){
-			err = data;
+			resolve( data );
 		});
 	});
+	
+	const result = Object.assign({}, data.fields);
+	
+	for( let part of data.parts ){
+		result[part.name] = {
+			name: part.filename,
+			stream: part.stream,
+		};
+	}
+	return result;
 }
 
 module.exports = async function(request, response){
@@ -66,19 +142,27 @@ module.exports = async function(request, response){
 
 	const body = await getBody(request);
 	console.log("request body", body);
+	try{
+		const result = await func(body);
+		//console.log("result", result);
+		
+		const header = {
+			"Access-Control-Allow-Origin":"*",
+			"Content-Type": mime.lookup('json'),
+			"Pragma": "no-cache",
+			"Cache-Control" : "no-cache"       
+		}
+		response.writeHead(200, header);
+		response.write( JSON.stringify(result) );
+		response.end();
 
-	//console.log("request", request);
-	const result = await func(body);
-	
+	}catch(e){
 
-	const header = {
-        "Access-Control-Allow-Origin":"*",
-		"Content-Type": mime.lookup('json'),
-        "Pragma": "no-cache",
-        "Cache-Control" : "no-cache"       
-    }
-	response.writeHead(200, header);
-    response.write(JSON.stringify(result), "text/plain");
-    response.end();
-	
+		console.error(e);
+		response.writeHead(400, {"Content-Type": "text/plain"});
+        response.write("400 Bad Request\n");
+        response.end();		
+		
+	}
+		
 }

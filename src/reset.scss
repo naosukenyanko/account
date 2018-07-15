@@ -19,3 +19,22 @@ th {
 	padding: 6px;
 	text-align:center;
 }
+
+
+input[type="text"] {
+	width: 140px;
+	box-sizing: border-box;
+	height: 28px;
+	line-height: 28px;
+}
+select {
+	width: 140px;
+	box-sizing: border-box;
+	height: 28px;
+	line-height: 28px;
+}
+.footer_buttons button{
+	width: 140px;
+	height: 32px;
+	margin: 6px;
+}

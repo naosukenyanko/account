@@ -6,6 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const mime = require("mime-types");
 const api = require('./api');
+const fse = require('fs-extra');
 
 
 http.createServer(function(request, response) {
@@ -72,3 +73,12 @@ http.createServer(function(request, response) {
 }).listen(parseInt(port, 10), function(){
 	console.log("listen on", port);
 });
+
+
+async function mkdirs(){
+	const temporary = path.join(__dirname, "temporary");
+	await fse.remove( temporary );
+	await fse.ensureDir( temporary );
+}
+
+mkdirs();

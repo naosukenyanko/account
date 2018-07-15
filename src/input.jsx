@@ -1,5 +1,6 @@
 
 import React from 'react';
+import {api} from './request';
 
 function TableHeader(props){
 	return (
@@ -18,42 +19,54 @@ function TableHeader(props){
 }
 
 function CodeSelector(props){
+	const {data, account_codes = []} = props;
+	const options = account_codes.map( (item, i)=>{
+		return (
+			<option key={i} value={item.code}>
+				{item.name}
+			</option>
+		);
+	});
 	return (
-		<select>
+		<select value={props.value}>
+			<option value="">(選択)</option>
+			{options}
 		</select>
 	);
 }
 
 function InputAmount(props){
 	return (
-		<input type="text"/>
+		<input type="text" value={props.value} />
 	);
 }
 
 function DateInput(props){
 	return (
-		<input type="text"/>
+		<input type="text" value={props.value} />
 	);
 }
 
 function TableRow(props){
+	const {data, account_codes} = props;
 	return (
 		<tr>
-			<td></td>
-			<td><DateInput/></td>
-			<td><CodeSelector/></td>
-			<td><InputAmount/></td>
-			<td><CodeSelector/></td>
-			<td><InputAmount/></td>
+			<td>{props.index+1}</td>
+			<td><DateInput value={data.date}/></td>
+			<td><CodeSelector {...props} value={data.debit_code} /></td>
+			<td><InputAmount value={data.debit_amount} /></td>
+			<td><CodeSelector {...props} value={data.credit_code} /></td>
+			<td><InputAmount value={data.credit_amount} /></td>
 			<td></td>
 		</tr>
 	);
 }
 
 function TableRows(props){
+	const {data, account_codes} = props;
 	return props.data.map( (row, i)=>{
 		return (
-			<TableRow key={i} data={row}/>
+			<TableRow key={i} {...props} data={row} index={i} />
 		);
 	});
 }
@@ -65,20 +78,19 @@ export default class extends React.Component{
 			data: [
 				{
 					date: "2018/10/12", 
-					debit_code: 0,
+					debit_code: "1",
 					debit_amount: 100,
-					credit_code: 0,
+					credit_code: "1",
 					credit_amount: 100,
 				}
 			],
-			account_codes: [
-				{name: "", code: 1},
-			]
+			account_codes: []
 		};
 	}
 
-	loadAccountCodes(){
-		
+	async loadAccountCodes(){
+		const res = await api.request("getData", {table: "account"});
+		this.setState({account_codes: res.body.data});
 	}
 
 	componentDidMount(){
@@ -94,9 +106,12 @@ export default class extends React.Component{
 				<table className="input_table">
 					<TableHeader/>
 					<tbody>
-						<TableRows data={this.state.data}/>
+						<TableRows {...this.state}/>
 					</tbody>
 				</table>
+				<div className="footer_buttons">
+					<button>登録</button>
+				</div>
 			</div>
 		);
 	}
