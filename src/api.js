@@ -12,15 +12,17 @@ const API = {}
 
 const TABLE_FILTER = {
 	"account": "account",
+	"journal": "journal",
 };
 
-async function getTableData(table, columns){
+
+async function getTableData(table, columns, where = {}){
 	const MongoClient = mongodb.MongoClient;
 	const client = await mongodb.connect(
 		'mongodb://localhost:27017', { useNewUrlParser: true });
 	const db = client.db("account");
 	const collection = db.collection(table);
-	const data = await collection.find({}, columns).toArray();
+	const data = await collection.find(where, columns).toArray();
 	client.close();
 	return data;
 }
@@ -36,10 +38,43 @@ async function deleteData(table){
 	return data;
 }
 
-API.getData = async function(body = {}){
-	let { table } = body;
+API.register = async function(body = {}){
+	let { table, data } = body;
+	data = JSON.parse( data );
 	table = TABLE_FILTER[ table ];
-	data = await getTableData(table, {_id: 0, code: 1, name: 2});
+	console.log("register", table, data);
+	
+	const MongoClient = mongodb.MongoClient;
+	const client = await mongodb.connect(
+		'mongodb://localhost:27017', { useNewUrlParser: true });
+	const db = client.db("account");
+	const collection = db.collection(table);
+	for(let row of data){
+		if(row._id){
+			await collection.update({_id: row.id}, row, true, false);
+		}else{
+			await collection.insert(row);
+		}
+	}
+
+	client.close();
+	return {
+		status: "success",
+	};
+}
+
+function parseJSON(val){
+	if(!val) return val;
+	return JSON.parse(val);
+}
+
+API.getData = async function(body = {}){
+	let { table, columns, where } = body;
+	table = TABLE_FILTER[ table ];
+	columns = parseJSON(columns);
+	where = parseJSON(where);
+	data = await getTableData(
+		table, columns, where);
 
 	/*
 	const data = [

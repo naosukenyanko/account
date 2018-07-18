@@ -22,6 +22,7 @@ export default class extends React.Component {
 			<div className="main_menu">
 				<LinkButton to="/balance_sheet">賃借対照表</LinkButton>
 				<LinkButton to="/input">仕訳入力</LinkButton>
+				<LinkButton to="/list">仕訳一覧</LinkButton>
 				<LinkButton to="/import">マスタ管理</LinkButton>
 			</div>
 		);

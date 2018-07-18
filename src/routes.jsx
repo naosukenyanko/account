@@ -4,6 +4,7 @@ import MainMenu from './menu';
 import BalanceSheet from './balance_sheet';
 import Input from './input';
 import MasterImport from './import';
+import JournalList from './list';
 
 export default class extends React.Component {
 	constructor(props){
@@ -24,6 +25,7 @@ export default class extends React.Component {
 						<Redirect exact from='/' to='/balance_sheet'/>
 						<Route path='/balance_sheet' component={BalanceSheet}/>
 						<Route path='/input' component={Input}/>
+						<Route path='/list' component={JournalList}/>
 						<Route path='/import/:table' component={MasterImport}/>
 						<Route path='/import' component={MasterImport}/>
 					</Switch>

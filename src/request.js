@@ -17,7 +17,11 @@ class Request{
 			
 			const formData = new FormData();
 			for(let name in body){
-				formData.append(name, body[name]);
+				let val = body[name];
+				if( typeof(val) !== "string" ){
+					val = JSON.stringify(val);
+				}
+				formData.append(name, val);
 			}
 
 			superagent

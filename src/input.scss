@@ -1,6 +1,34 @@
 
+.input_screen {
+	.group {
+		margin: 6px;
+	}
+}
+
 .input_table {
 	th {
 		width: 140px;
+	}
+	th.set{
+		width: 380px;
+	}
+	td{
+		vertical-align: top;
+	}
+	
+	.manage_button{
+		width: 32px;
+	}
+
+	.input_amount{
+		display: inline-block;
+
+		input{
+			width: 100px;
+		}
+	}
+
+	.right-bold{
+		border-right: 4px double #a0a0a0;
 	}
 }
